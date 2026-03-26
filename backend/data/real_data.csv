@@ -1,0 +1,6 @@
+city,neighbourhood,property_type,room_type,accommodates,bedrooms,beds,bathrooms,review_scores_rating,number_of_reviews,cancellation_policy,cleaning_fee,name,amenities,predicted_price,log_price,submitted_at
+NYC,,Apartment,Entire home/apt,4,1,2,1.0,92,14,strict,1,Beautiful apartment,"['wifi', 'ac', 'kitchen']",318,5.762051382780177,2026-03-26T20:47:50.664744
+LA,,House,Entire home/apt,5,3,3,1.5,92,14,strict,1,Beautiful apartment,"['wifi', 'ac', 'kitchen']",330,5.799092654460526,2026-03-26T20:53:37.423564
+LA,,House,Entire home/apt,5,3,3,1.5,92,14,strict,1,Beautiful apartment,['wifi'],327,5.7899601708972535,2026-03-26T20:53:44.442245
+NYC,,Apartment,Entire home/apt,4,1,2,1.0,92,14,strict,1,Beautiful apartment,"['wifi', 'ac', 'kitchen']",318,5.762051382780177,2026-03-26T20:55:42.015269
+NYC,,Apartment,Entire home/apt,4,1,2,1.0,92,14,strict,1,Beautiful apartment,"['wifi', 'ac', 'kitchen']",318,5.762051382780177,2026-03-26T21:00:34.293709
