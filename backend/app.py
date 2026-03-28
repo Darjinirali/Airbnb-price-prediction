@@ -46,7 +46,7 @@ CORS(app, supports_credentials=True, origins=[
     "http://localhost:5174", 
     "http://localhost:5175", 
     "http://localhost:3000",
-    "https://airbnb-price-prediction-sigma.vercel.app/" # <--- Yahan apna asli URL daalein
+    "https://airbnb-price-prediction-sigma.vercel.app" # <--- Yahan apna asli URL daalein
 ])
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
@@ -746,7 +746,7 @@ def status():
 
 if __name__ == '__main__':
     import os
-    CORS(app)  # Ye ensure karein ki file ke top pe import os ho
+    # ⛔ YAHAAN SE 'CORS(app)' KO DELETE KAR DIYA HAI ⛔
     
     print("=" * 50)
     print("  StayWorth Backend Starting...")
@@ -761,5 +761,4 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     
     # Important: 0.0.0.0 lagana zaroori hai taaki server public ho
-    # Production (Render) mein debug=False rakhna better rehta hai
     app.run(host="0.0.0.0", port=port, debug=False)
