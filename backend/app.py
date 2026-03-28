@@ -31,6 +31,7 @@ from flask_cors import CORS
 import json, os, pickle, numpy as np, pandas as pd
 from datetime import datetime
 import warnings
+from flask_cors import CORS
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
@@ -736,7 +737,8 @@ def status():
 
 
 if __name__ == '__main__':
-    import os  # Ye ensure karein ki file ke top pe import os ho
+    import os
+    CORS(app)  # Ye ensure karein ki file ke top pe import os ho
     
     print("=" * 50)
     print("  StayWorth Backend Starting...")
