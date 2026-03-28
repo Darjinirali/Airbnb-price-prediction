@@ -736,15 +736,20 @@ def status():
 
 
 if __name__ == '__main__':
+    import os  # Ye ensure karein ki file ke top pe import os ho
+    
     print("=" * 50)
     print("  StayWorth Backend Starting...")
     print("=" * 50)
+    
     # Initial model train if not exists
     if not os.path.exists(MODEL_FILE):
         print("[INIT] Training initial model with 1000 dummy samples...")
         train_model()
-    app.run(debug=True, port=5000)
-if __name__ == "__main__":
+
+    # Render ke liye port environment variable se lo
     port = int(os.environ.get("PORT", 5000))
-    print(f"Starting Flask app on 0.0.0.0:{port}")   # ← Yeh line add kar do (debug ke liye)
+    
+    # Important: 0.0.0.0 lagana zaroori hai taaki server public ho
+    # Production (Render) mein debug=False rakhna better rehta hai
     app.run(host="0.0.0.0", port=port, debug=False)
