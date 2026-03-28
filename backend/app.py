@@ -37,9 +37,17 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__)
 app.secret_key = 'stayworth_secret_2024'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = True   # <-- True karein (Vercel/Render HTTPS hain)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"])
+
+# Niche apne Vercel URL ko add karein
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", 
+    "http://localhost:5174", 
+    "http://localhost:5175", 
+    "http://localhost:3000",
+    "https://airbnb-price-prediction-sigma.vercel.app/" # <--- Yahan apna asli URL daalein
+])
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
