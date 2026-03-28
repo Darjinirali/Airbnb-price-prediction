@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-const API = 'http://localhost:5000';
+const API = 'https://airbnb-price-prediction-8.onrender.com';
 axios.defaults.withCredentials = true;
 
 interface User { name: string; email: string; }
