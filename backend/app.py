@@ -391,14 +391,13 @@ def train_model(df_extra=None):
     print(f"[TRAIN] Feature shape: {X.shape}")
 
     model = GradientBoostingRegressor(
-        n_estimators=500,
-        max_depth=6,
-        learning_rate=0.05,
+        n_estimators=100,  # 500 ki jagah 100 rakho (10x faster)
+        max_depth=5,       # 6 ki jagah 5 (Less complex)
+        learning_rate=0.1, # 0.05 ki jagah 0.1 (Balance speed)
         subsample=0.8,
         random_state=42
     )
     model.fit(X, y)
-
     train_preds = model.predict(X)
     r2 = r2_score(y, train_preds)
     print(f"[TRAIN] Train R²: {r2:.4f}")
