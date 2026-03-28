@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { Plus, Minus, Loader2, TrendingUp, BarChart2, RefreshCw } from 'lucide-react';
 import { API } from '../context/AuthContext';
+import { saveToDashboard } from './Dashboard';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface FormState {
@@ -98,11 +100,20 @@ function Stepper({
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Estimate() {
   const [form, setForm] = useState<FormState>({
-    city: 'NYC', neighbourhood: '', property_type: 'Apartment',
-    room_type: 'Entire home/apt', accommodates: 4, bedrooms: 1,
-    beds: 2, bathrooms: 1.0, review_scores_rating: 92,
-    number_of_reviews: 14, cancellation_policy: 'strict',
-    cleaning_fee: 1, name: 'Beautiful apartment', amenities: ['wifi','ac','kitchen'],
+    city: 'NYC', 
+    neighbourhood: '', 
+    property_type: 'Apartment',
+    room_type: 'Entire home/apt', 
+    accommodates: 4, 
+    bedrooms: 1,
+    beds: 2, 
+    bathrooms: 1.0, 
+    review_scores_rating: 92,
+    number_of_reviews: 14, 
+    cancellation_policy: 'strict',
+    cleaning_fee: 1, 
+    name: 'Beautiful apartment', 
+    amenities: ['wifi','ac','kitchen'],
   });
 
   const [result, setResult]     = useState<Result | null>(null);
@@ -111,6 +122,7 @@ export default function Estimate() {
   const [graphLoading, setGraphLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'city' | 'beds' | 'accom' | 'amenity' | 'room'>('city');
   const [error, setError]       = useState('');
+  const { user } = useAuth();
 
   const AMENITIES = ['wifi','ac','kitchen','tv','washer','parking','gym','pool','elevator','doorman','pets','breakfast'];
 
@@ -133,22 +145,54 @@ export default function Estimate() {
       amenities: p.amenities.includes(a) ? p.amenities.filter(x => x !== a) : [...p.amenities, a],
     }));
 
+  // ─── Main Predict Function ─────────────────────────────────────────────────
   const handlePredict = async () => {
     setLoading(true);
     setError('');
+    
     try {
       const res = await axios.post(`${API}/predict`, form);
-      const n = res.data.nightly_rate;
-      setResult({
-        nightly_rate: n,
-        low: Math.round(n * 0.85),
-        high: Math.round(n * 1.18),
-        total: Math.round(n * 7),
+      const nightly_rate = res.data.nightly_rate;
+
+      // Set Result
+      const predictionResult: Result = {
+        nightly_rate: nightly_rate,
+        low: Math.round(nightly_rate * 0.85),
+        high: Math.round(nightly_rate * 1.18),
+        total: Math.round(nightly_rate * 7),
+      };
+
+      setResult(predictionResult);
+
+      // === SAVE TO DASHBOARD IF USER IS LOGGED IN ===
+      if (user) {
+        try {
+          await saveToDashboard(user.email, {
+            city: form.city,
+            property_type: form.property_type,
+            room_type: form.room_type,
+            bedrooms: form.bedrooms,
+            accommodates: form.accommodates,
+            nightly_rate: nightly_rate,
+            review_scores_rating: form.review_scores_rating,
+            amenities: form.amenities,
+          });
+          console.log("✅ Saved to dashboard successfully");
+        } catch (saveErr) {
+          console.warn("⚠️ Failed to save to dashboard:", saveErr);
+          // Don't show error to user, just log it
+        }
+      }
+
+      // Save to backend (your original save)
+      await axios.post(`${API}/save_data`, { 
+        ...form, 
+        predicted_price: nightly_rate 
       });
 
-      // Save data + fetch graphs
-      await axios.post(`${API}/save_data`, { ...form, predicted_price: n });
+      // Fetch graphs
       fetchGraphs();
+
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Backend error — make sure Flask is running on :5000');
     } finally {
@@ -161,14 +205,17 @@ export default function Estimate() {
     try {
       const res = await axios.post(`${API}/graphs`, form);
       setGraphs(res.data);
-    } catch {}
-    finally { setGraphLoading(false); }
+    } catch (err) {
+      console.error("Failed to fetch graphs", err);
+    } finally {
+      setGraphLoading(false);
+    }
   };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="pt-16 min-h-screen grid grid-cols-1 lg:grid-cols-12">
-      {/* ════ LEFT: Form ════ */}
+      {/* LEFT: Form */}
       <div className="lg:col-span-7 p-8 lg:p-14 bg-white overflow-auto">
         <h1 className="text-4xl font-black mb-1.5 text-gray-900">Get your estimate</h1>
         <p className="text-gray-500 mb-12">Fill in your property details below.</p>
@@ -205,7 +252,7 @@ export default function Estimate() {
             </div>
           </div>
 
-          {/* Property */}
+          {/* Property Type & Room Type */}
           <div className="grid grid-cols-2 gap-5">
             <div>
               <label className="field-label">Property Type</label>
@@ -226,20 +273,16 @@ export default function Estimate() {
             </div>
           </div>
 
-          {/* Size */}
+          {/* Size & Configuration */}
           <div>
             <h3 className="section-label">Size & Configuration</h3>
             <div className="grid grid-cols-2 gap-5">
               <Stepper label="Guests"    value={form.accommodates} onDec={() => changeNum('accommodates',-1)} onInc={() => changeNum('accommodates',1)} />
               <Stepper label="Bedrooms"  value={form.bedrooms}    onDec={() => changeNum('bedrooms',-1)}    onInc={() => changeNum('bedrooms',1)} />
               <Stepper label="Beds"      value={form.beds}        onDec={() => changeNum('beds',-1)}        onInc={() => changeNum('beds',1)} />
-              <Stepper label="Bathrooms" value={form.bathrooms}   onDec={() => changeNum('bathrooms',-1)} onInc={() => changeNum('bathrooms',1)} step={1} />
+              <Stepper label="Bathrooms" value={form.bathrooms}   onDec={() => changeNum('bathrooms',-1)} onInc={() => changeNum('bathrooms',1)} />
             </div>
           </div>
-
-          
-
-        
 
           {/* Amenities */}
           <div>
@@ -261,14 +304,14 @@ export default function Estimate() {
             </div>
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-600 font-medium">
               ⚠️ {error}
             </div>
           )}
 
-          {/* Submit */}
+          {/* Submit Button */}
           <button
             onClick={handlePredict}
             disabled={loading}
@@ -280,7 +323,7 @@ export default function Estimate() {
         </div>
       </div>
 
-      {/* ════ RIGHT: Result + Graphs ════ */}
+      {/* RIGHT: Result + Graphs */}
       <div className="lg:col-span-5 bg-gray-50 p-8 lg:p-12 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] overflow-auto">
         {!result ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
@@ -290,7 +333,7 @@ export default function Estimate() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* ── Price Card ── */}
+            {/* Price Card */}
             <div className="bg-black text-white rounded-3xl p-8 shadow-2xl">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp size={16} className="opacity-60" />
@@ -315,7 +358,7 @@ export default function Estimate() {
               </div>
             </div>
 
-            {/* ── Graphs ── */}
+            {/* Graphs Section */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
@@ -362,39 +405,19 @@ export default function Estimate() {
               ) : graphs ? (
                 <div>
                   {activeTab === 'city' && (
-                    <BarChart
-                      data={graphs.city_comparison}
-                      labelKey="city" valueKey="price"
-                      highlight={form.city}
-                    />
+                    <BarChart data={graphs.city_comparison} labelKey="city" valueKey="price" highlight={form.city} />
                   )}
                   {activeTab === 'beds' && (
-                    <BarChart
-                      data={graphs.bedrooms_vs_price}
-                      labelKey="bedrooms" valueKey="price"
-                      highlight={form.bedrooms}
-                    />
+                    <BarChart data={graphs.bedrooms_vs_price} labelKey="bedrooms" valueKey="price" highlight={form.bedrooms} />
                   )}
                   {activeTab === 'accom' && (
-                    <BarChart
-                      data={graphs.accommodates_vs_price}
-                      labelKey="accommodates" valueKey="price"
-                      highlight={form.accommodates}
-                    />
+                    <BarChart data={graphs.accommodates_vs_price} labelKey="accommodates" valueKey="price" highlight={form.accommodates} />
                   )}
                   {activeTab === 'amenity' && (
-                    <BarChart
-                      data={graphs.amenity_impact.slice(0,6)}
-                      labelKey="amenity" valueKey="impact"
-                      color="#16a34a"
-                    />
+                    <BarChart data={graphs.amenity_impact.slice(0,6)} labelKey="amenity" valueKey="impact" color="#16a34a" />
                   )}
                   {activeTab === 'room' && (
-                    <BarChart
-                      data={graphs.room_type_prices}
-                      labelKey="room" valueKey="price"
-                      highlight={form.room_type}
-                    />
+                    <BarChart data={graphs.room_type_prices} labelKey="room" valueKey="price" highlight={form.room_type} />
                   )}
                 </div>
               ) : (
