@@ -410,11 +410,24 @@ def train_model(df_extra=None):
     return r2, len(df)
 
 def load_model():
-    if not os.path.exists(MODEL_FILE):
-        print("[INFO] Model nahi mila, train kar raha hoon...")
+    try:
+        # Pehle purane model ko try karein
+        with open(MODEL_FILE, 'rb') as f:
+            return pickle.load(f)
+    except Exception as e:
+        # Agar error aaye (Numpy mismatch ya corruption), toh file delete karo
+        print(f"[ERROR] Model corrupted/incompatible: {e}")
+        print("[INFO] Deleting old model and retraining...")
+        
+        if os.path.exists(MODEL_FILE):
+            os.remove(MODEL_FILE)
+        
+        # Naya model train karo
         train_model()
-    with open(MODEL_FILE, 'rb') as f:
-        return pickle.load(f)
+        
+        # Naya model load karo
+        with open(MODEL_FILE, 'rb') as f:
+            return pickle.load(f)
 
 # ═════════════════════════════════════════════════════════════
 # USERS / AUTH
