@@ -744,3 +744,6 @@ if __name__ == '__main__':
         print("[INIT] Training initial model with 1000 dummy samples...")
         train_model()
     app.run(debug=True, port=5000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))   # Render ka PORT automatically lega
+    app.run(host="0.0.0.0", port=port, debug=False)
